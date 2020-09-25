@@ -41,44 +41,7 @@ pub struct  Node {
     secret: Secret,
     state: Cell<NodeState>,
     tx: Option<Tx>,
-    inner: Option<Inner>,
 }
-
-struct  Inner {
-    rx: Rx,
-    reader: ReadHalf<TcpStream>
-}
-//
-// impl Future for Inner {
-//     type Output = Vec<u8>;
-//
-//     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-//         println!("call polling");
-//
-//         match self.rx.poll_recv(cx) {
-//             Poll::Ready(x) => {
-//                 println!("x = {:?}", x);
-//                 return Poll::Ready(x.unwrap());
-//             },
-//             _ => {
-//
-//             }
-//         };
-//
-//         let mut buf = [u8; 1024];
-//         match self.reader.poll_read(ctx, &mut buf) {
-//             Poll::Ready(size) => {
-//                 println!("read {:?} bytes", size);
-//                 return Poll::Ready(&buf[..size]);
-//             },
-//             _ => {
-//
-//             }
-//         };
-//
-//         Poll::Pending
-//     }
-// }
 
 impl Node {
     pub fn new(addr: SocketAddr, pubkey: Public) -> Self {
@@ -94,7 +57,6 @@ impl Node {
             secret: Secret::from(nonce),
             state: Cell::new(NodeState::Auth),
             tx: None,
-            inner: None,
         }
     }
 
@@ -159,29 +121,7 @@ impl Node {
         let (mut reader, mut writer) = split(stream);
         let (tx, mut rx) = mpsc::unbounded_channel::<Vec<u8>>();
 
-        // tokio::spawn(async move {
-        //     while let Some(buf) = rx.recv().await {
-        //         let size = writer.write(&buf).await.unwrap();
-        //         println!("send {:?} bytes of {:?} bytes", size, buf.len());
-        //     }
-        // });
-
         self.tx = Some(tx);
-        // let inner = Inner {
-        //     rx,
-        //     reader,
-        // };
-
-        self.send_auth();
-
-        // loop {
-        //     let buf = inner.await;
-        //     println!("{:?}", buf);
-        // }
-
-        // tokio::select! {
-        //     _ =
-        // }
 
         loop {
             match self.state.get() {
@@ -189,10 +129,18 @@ impl Node {
                     println!("socket is closed");
                     break;
                 },
+
+                NodeState::Auth => {
+                    self.send_auth();
+                    self.state.set(NodeState::Ack);
+                },
+
                 _ => {
 
                 }
             };
+
+            // we don't have to call tokio::spawn in this way
 
             tokio::select! {
                 _ = self.read(&mut reader) => {
