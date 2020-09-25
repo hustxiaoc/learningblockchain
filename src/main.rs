@@ -1,4 +1,3 @@
-#![feature(non_exhaustive)]
 use std::error::Error;
 use mio::{Events, Interest, Poll, Token};
 use std::io::{Read, Write};

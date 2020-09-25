@@ -1,4 +1,3 @@
-#![feature(non_exhaustive)]
 use std::error::Error;
 use std::io::{Read, Write};
 use hex;
@@ -17,11 +16,12 @@ use ethereum_types::{H256, H512};
 use std::future::Future;
 use std::task::{Context, Poll};
 use std::pin::Pin;
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
+use std::cmp::PartialEq;
 use crate::message::{self, PeerInfo};
 
 // Auth, Ack, Header, Body
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 enum NodeState {
     Auth,
     Ack,
@@ -41,6 +41,8 @@ pub struct  Node {
     secret: Secret,
     state: Cell<NodeState>,
     tx: Option<Tx>,
+    remote_ephemeral_public_key: RefCell<Option<Public>>,
+    remote_nonce: RefCell<Option<H256>>,
 }
 
 impl Node {
@@ -57,6 +59,8 @@ impl Node {
             secret: Secret::from(nonce),
             state: Cell::new(NodeState::Auth),
             tx: None,
+            remote_ephemeral_public_key: RefCell::new(None),
+            remote_nonce: RefCell::new(None),
         }
     }
 
@@ -92,10 +96,10 @@ impl Node {
                     return;
                 }
 
-                if buf[0] == 4 {
-                    // decode ack
-                    // let message = ecies::decrypt(&self.secret, &[], &buf[0..size]).expect("decrypt error");
-                    // println!("message decrypted {:?}", message);
+                let buf = &buf[..size];
+
+                if self.state.get() == NodeState::Ack {
+                    self.handle_ack(buf);
                 }
 
 
@@ -106,6 +110,27 @@ impl Node {
 
             }
         }
+    }
+
+    fn handle_ack(&self, buf: &[u8]) {
+        let message = ecies::decrypt(&self.secret, &[], buf).expect("decrypt error");
+        println!("message decrypted {:?}", message);
+        let mut pub_key = Vec::new();
+        pub_key.push(0x04);
+        pub_key.extend_from_slice(&message[..64]);
+
+        let remote_ephemeral_public_key = H512::from_slice(&message[..64]);
+
+        *self.remote_ephemeral_public_key.borrow_mut() = Some(remote_ephemeral_public_key);
+        *self.remote_nonce.borrow_mut() = Some(H256::from_slice(&message[64..96]));
+        println!(" remote pubkey is {:?}", hex::encode(&remote_ephemeral_public_key));
+
+        self.state.set(NodeState::Header);
+    }
+
+    fn handle_header(&self, buf: &[u8]) {
+        let header = &buf[..16];
+        let mac = &buf[16..32];
     }
 
     async fn write(&self, rx: &mut Rx, stream: &mut WriteHalf<TcpStream>) {
