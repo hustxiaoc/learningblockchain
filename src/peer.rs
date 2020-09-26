@@ -1,6 +1,4 @@
 use std::error::Error;
-use mio::net::{ TcpStream, UdpSocket};
-use mio::{Events, Interest, Poll, Token};
 use std::io::{Read, Write};
 use hex;
 use rand::{thread_rng, Rng};
@@ -55,7 +53,7 @@ pub struct Peer {
 
 impl Peer {
     pub fn new(addr: SocketAddr, private_key: SecretKey) -> Self {
-        let local_udp_addr: SocketAddr = "192.168.31.125:30309".parse().unwrap();
+        let local_udp_addr: SocketAddr = "192.168.88.120:30309".parse().unwrap();
 
         Self {
             addr,

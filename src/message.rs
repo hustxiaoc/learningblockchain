@@ -1,7 +1,7 @@
 use byteorder::{LittleEndian, BigEndian, WriteBytesExt};
 use std::mem;
 use std::net::{IpAddr, Ipv6Addr, Ipv4Addr, SocketAddr};
-use rlp::{Rlp, RlpStream, Decodable, DecoderError};
+use rlp::{Rlp, RlpStream, Decodable, DecoderError, Encodable };
 use std::time::{ SystemTime, Duration, UNIX_EPOCH};
 use keccak_hash::keccak;
 use secp256k1::{SecretKey, PublicKey, Message, sign};
@@ -16,6 +16,7 @@ pub struct PeerInfo {
     udp_port: u16,
     tcp_port: u16,
 }
+
 
 impl Decodable for PeerInfo {
     fn decode(rlp: &Rlp) -> Result<Self, DecoderError> {
@@ -98,6 +99,46 @@ impl PeerInfo {
         }
     }
 }
+
+pub type ProtocolId = [u8; 3];
+
+#[derive(Debug, PartialEq, Eq)]
+/// Protocol info
+pub struct CapabilityInfo {
+	/// Protocol ID
+	pub protocol: ProtocolId,
+	/// Protocol version
+	pub version: u8,
+}
+
+impl Encodable for CapabilityInfo {
+	fn rlp_append(&self, s: &mut RlpStream) {
+		s.begin_list(2);
+		s.append(&&self.protocol[..]);
+		s.append(&self.version);
+	}
+}
+
+pub struct Capabilitiy {
+    pub name: String,
+    pub version: u8,
+}
+
+impl Encodable for Capabilitiy {
+    fn rlp_append(&self, s: &mut RlpStream) {
+        s.append(&self.name);
+        s.append(&self.version);
+    }
+}
+
+// impl Decodable for Capabilitiy {
+//     fn decode(rlp: &Rlp) -> Result<Self, DecoderError> {
+//         Self::decode_rlp(rlp).map_err(|err| {
+//             println!("{:?}", err);
+//             DecoderError::Custom("rlp decode peer error")
+//         })
+//     }
+// }
 
 fn int_u16_2buttfer(number: u16) -> [u8; 2] {
     let mut bs = [0u8; mem::size_of::<u16>()];

@@ -1,6 +1,6 @@
 use std::error::Error;
-use mio::net::{ TcpStream, UdpSocket};
-use mio::{Events, Interest, Poll, Token};
+// use mio::net::{ TcpStream, UdpSocket};
+// use mio::{Events, Interest, Poll, Token};
 use std::io::{Read, Write};
 use hex;
 use rand::{thread_rng, Rng};

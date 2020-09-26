@@ -14,7 +14,14 @@ rlp = "0.4"
 tiny-keccak = { version = "2.0.1", features = ["keccak"] }
 byteorder = "1.3.4"
 keccak-hash = "0.1"
+bytes = "0.4"
 tokio= { version = "0.2.22", features = ["full"] }
-parity-crypto = { path = "./crates/parity-common/parity-crypto", features = ["publickey"] }
-ethereum-types = { path = "./crates/parity-common/ethereum-types" }
-mio = { path = "./crates/mio", features = ["os-poll", "tcp", "udp"] }
+parity-crypto = { version = "0.6.2", features = ["publickey"] }
+ethereum-types = { version = "0.9.0" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+parity-bytes = "0.1"
+
+# parity-crypto = { version = "v0.6.2",path = "./crates/parity-common/parity-crypto", features = ["publickey"] }
+# ethereum-types = { path = "./crates/parity-common/ethereum-types" }
+# mio = { path = "./crates/mio", features = ["os-poll", "tcp", "udp"] }
